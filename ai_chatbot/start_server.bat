@@ -1,0 +1,15 @@
+@echo off
+echo ========================================
+echo Starting AI Chatbot Server
+echo ========================================
+echo.
+echo Make sure you have installed dependencies:
+echo   pip install -r requirements.txt
+echo.
+echo Starting server on http://localhost:8000
+echo Press Ctrl+C to stop
+echo.
+python server.py
+
+
+

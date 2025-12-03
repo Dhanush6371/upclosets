@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-dark-text bg-white antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-gold text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-gold-lg transition-all duration-300 transform hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-gold text-gold px-8 py-4 rounded-full font-semibold text-lg hover:bg-gold hover:text-white transition-all duration-300 transform hover:scale-105;
+  }
+
+  .btn-outline {
+    @apply border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-dark-text transition-all duration-300 backdrop-blur-sm;
+  }
+
+  .card-elegant {
+    @apply bg-white rounded-2xl shadow-elegant hover:shadow-elegant-lg transition-all duration-500 overflow-hidden;
+  }
+
+  .card-interactive {
+    @apply transform transition-all duration-500 hover:-translate-y-2 hover:shadow-elegant-lg;
+  }
+
+  .gradient-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent;
+  }
+
+  .text-gradient-gold {
+    @apply bg-gradient-gold bg-clip-text text-transparent;
+  }
+
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20;
+  }
+}
+
+@layer utilities {
+  .section-padding {
+    @apply py-24 md:py-[100px] px-6 md:px-12;
+  }
+
+  .section-padding-mobile {
+    @apply py-16 md:py-24;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Scroll reveal states */
+
+/* Base reveal uses CSS variables for direction offsets */
+.reveal-init {
+  opacity: 0;
+  transform: translate(var(--reveal-tx, -40px), var(--reveal-ty, 0));
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.reveal-init.in-view {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Helpers for explicit direction without JS inline style */
+[data-reveal-dir="left"].reveal-init { --reveal-tx: -40px; --reveal-ty: 0; }
+[data-reveal-dir="right"].reveal-init { --reveal-tx: 40px; --reveal-ty: 0; }
+[data-reveal-dir="up"].reveal-init { --reveal-tx: 0; --reveal-ty: -40px; }
+[data-reveal-dir="down"].reveal-init { --reveal-tx: 0; --reveal-ty: 40px; }
+
+/* Split text spans inherit timing from parent by index via inline --reveal-delay */
+.reveal-split {
+  display: inline-block;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 111, 71, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(139, 111, 71, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.8s ease-out;
+}
+
+.animate-fade-down {
+  animation: fadeDown 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s infinite;
+}
