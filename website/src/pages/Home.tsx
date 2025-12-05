@@ -54,28 +54,24 @@ export default function Home() {
       description: 'Luxury walk-in closets designed to maximize space and elevate your daily routine.',
       image: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=800',
       path: '/walk-in-closets',
-      icon: '👔',
     },
     {
       title: 'Reach-in Closets',
       description: 'Smart organization solutions for compact spaces with maximum functionality.',
       image: 'https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=800',
       path: '/reach-in-closets',
-      icon: '📦',
     },
     {
       title: 'Pantry Systems',
       description: 'Custom pantry designs that bring order and elegance to your kitchen storage.',
       image: 'https://images.pexels.com/photos/6489119/pexels-photo-6489119.jpeg?auto=compress&cs=tinysrgb&w=800',
       path: '/kitchen-pantry',
-      icon: '🍽️',
     },
     {
       title: 'Garage & Office Storage',
       description: 'Professional organization systems for garages, offices, and specialty spaces.',
       image: 'https://images.pexels.com/photos/7034682/pexels-photo-7034682.jpeg?auto=compress&cs=tinysrgb&w=800',
       path: '/garages',
-      icon: '💼',
     },
   ];
 
@@ -361,9 +357,6 @@ export default function Home() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="gradient-overlay"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-6xl animate-float">{service.icon}</div>
-                  </div>
                 </div>
                 <div className="p-6 bg-gradient-to-br from-white to-gray-50">
                   <h3 className="text-xl font-display font-bold text-dark-text mb-3 group-hover:text-gold transition-colors">

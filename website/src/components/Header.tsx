@@ -66,7 +66,7 @@ export default function Header() {
             </div>
             <div className="text-left">
               <div className="text-2xl font-display font-extrabold text-dark-text leading-tight">
-                Up Closets
+                Closets Pro DMV
               </div>
               <div className="text-xs tracking-widest text-gray-500 uppercase">
                 Upgrade Your Space
@@ -97,12 +97,14 @@ export default function Header() {
             </a>
             
             <div className="flex items-center gap-3 ml-4">
-              <button
-                onClick={() => handleNavClick('/process')}
-                className="btn-secondary !py-3 !px-6 text-base"
+              <a
+                href="http://localhost:3001"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary !py-3 !px-6 text-base inline-flex items-center justify-center"
               >
                 Track Order
-              </button>
+              </a>
               <button
                 onClick={() => handleNavClick('/contact')}
                 className="btn-primary !py-3 !px-6 text-base"
@@ -252,12 +254,14 @@ export default function Header() {
 
               {/* Mobile CTA Buttons */}
               <div className="flex flex-col gap-3 mb-6 pb-6 border-b border-gray-200">
-                <button
-                  onClick={() => handleNavClick('/process')}
-                  className="btn-secondary w-full"
+                <a
+                  href="http://localhost:3001"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary w-full inline-flex items-center justify-center"
                 >
                   Track Order
-                </button>
+                </a>
                 <button
                   onClick={() => handleNavClick('/contact')}
                   className="btn-primary w-full"

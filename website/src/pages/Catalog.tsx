@@ -5,6 +5,7 @@ import {
   fetchCategories, 
   fetchAllCatalogItems 
 } from '../services/googleDrive';
+import GetQuoteModal from '../components/GetQuoteModal';
 
 interface Category {
   id: string;
@@ -31,6 +32,8 @@ export default function Catalog() {
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
 
   // Icon mapping for categories (you can customize this)
   const getIconForCategory = (index: number): string => {
@@ -116,10 +119,10 @@ export default function Catalog() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <button 
-              onClick={() => navigate('/contact')}
+              onClick={() => setIsModalOpen(true)}
               className="btn-primary"
             >
-              Start Your Project
+              Get Free Estimation
             </button>
             <button 
               onClick={() => navigate('/process')}
@@ -307,10 +310,13 @@ export default function Catalog() {
                         <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                       </button>
                       <button
-                        onClick={() => navigate('/contact')}
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setIsModalOpen(true);
+                        }}
                         className="flex-1 bg-white border-2 border-gold text-gold px-4 py-3.5 rounded-xl font-semibold hover:bg-gold hover:text-white hover:shadow-gold transition-all duration-300"
                       >
-                        Get Quote
+                        Get Estimation
                       </button>
                     </div>
                   </div>
@@ -362,6 +368,17 @@ export default function Catalog() {
           </div>
         </div>
       </section>
+
+      {/* Get Estimation Modal */}
+      <GetQuoteModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedItem(null);
+        }}
+        itemTitle={selectedItem?.title}
+        categoryName={selectedItem?.categoryName}
+      />
     </div>
   );
 }
