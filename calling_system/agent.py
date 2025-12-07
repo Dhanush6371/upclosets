@@ -18,7 +18,8 @@ from livekit.agents import (
     RoomInputOptions,
     function_tool,
 )
-from livekit.plugins import google, noise_cancellation
+from livekit.plugins import noise_cancellation
+from livekit.plugins.openai import realtime  # ✅ REPLACED GOOGLE WITH OPENAI
 
 # --- Local imports
 from db import DatabaseDriver
@@ -52,7 +53,7 @@ def convert_relative_date_to_exact_date(date_str: str) -> str:
     days_of_week = {
         'monday': 0, 'mon': 0,
         'tuesday': 1, 'tue': 1, 'tues': 1,
-        'wednesday': 2, 'wed': 2,
+        'Wednesday': 2, 'wed': 2,
         'thursday': 3, 'thu': 3, 'thur': 3, 'thurs': 3,
         'friday': 4, 'fri': 4,
         'saturday': 5, 'sat': 5,
@@ -147,7 +148,9 @@ class UpClosetsAgent(Agent):
     def __init__(self, job_context=None):
         combined_instructions = f"{AGENT_INSTRUCTION}\n\n{SESSION_INSTRUCTION}"
         schedule_tool = schedule_consultation_tool_factory(self)
+
         super().__init__(instructions=combined_instructions, tools=[schedule_tool])
+
         self.current_session = None
         self.caller_phone = None
         self.consultation_scheduled = False
@@ -157,8 +160,17 @@ class UpClosetsAgent(Agent):
         global current_agent
         current_agent = self
 
+    async def on_start(self, session):
+        self.current_session = session
+        try:
+            await self.current_session.generate_reply(
+                instructions="Greet the caller warmly as Up Closets of NOVA and ask how you can assist."
+            )
+        except Exception as e:
+            log.error(f"Failed to send initial greeting: {e}")
+
     # ------------------------------------------------------------
-    # 🧩 REPLACED TERMINATION LOGIC (from RestaurantAgent)
+    # TERMINATION LOGIC
     # ------------------------------------------------------------
     async def _terminate_call_after_delay(self):
         job_context = self.job_context
@@ -179,6 +191,7 @@ class UpClosetsAgent(Agent):
                 except Exception as e:
                     log.warning(f"⚠️ Could not send final goodbye: {e}")
 
+                # Disconnect participants
                 try:
                     if hasattr(self.current_session, "room") and self.current_session.room:
                         for pid, p in self.current_session.room.remote_participants.items():
@@ -189,19 +202,17 @@ class UpClosetsAgent(Agent):
                 except Exception:
                     pass
 
+                # Close room
                 try:
                     if hasattr(self.current_session, "room") and self.current_session.room:
                         await self.current_session.room.close()
                 except Exception:
                     pass
 
+                # Attempt shutdown mechanisms
                 for method_name in [
-                    "disconnect",
-                    "stop",
-                    "end",
-                    "close",
-                    "terminate",
-                    "shutdown",
+                    "disconnect", "stop", "end",
+                    "close", "terminate", "shutdown",
                 ]:
                     if hasattr(self.current_session, method_name):
                         try:
@@ -210,75 +221,7 @@ class UpClosetsAgent(Agent):
                         except Exception:
                             continue
 
-                try:
-                    if hasattr(self.current_session, "_room") and self.current_session._room:
-                        await self.current_session._room.close()
-                except Exception:
-                    pass
-
-                try:
-                    if hasattr(self.current_session, "agent") and self.current_session.agent:
-                        if hasattr(self.current_session.agent, "stop"):
-                            await self.current_session.agent.stop()
-                except Exception:
-                    pass
-
-                try:
-                    if job_context and hasattr(job_context, "room") and job_context.room:
-                        for pid, participant in job_context.room.remote_participants.items():
-                            if pid.startswith("sip_"):
-                                for m in ["disconnect", "remove", "kick"]:
-                                    if hasattr(participant, m):
-                                        try:
-                                            await getattr(participant, m)()
-                                        except Exception:
-                                            pass
-                except Exception:
-                    pass
-
-                try:
-                    if job_context and hasattr(job_context, "room") and job_context.room:
-                        for pid in job_context.room.remote_participants.keys():
-                            if hasattr(job_context.room, "disconnect_participant"):
-                                await job_context.room.disconnect_participant(pid)
-                except Exception:
-                    pass
-
-                try:
-                    if job_context and hasattr(job_context, "room") and job_context.room:
-                        for pid in job_context.room.remote_participants.keys():
-                            if hasattr(job_context.room, "remove_participant"):
-                                await job_context.room.remove_participant(pid)
-                except Exception:
-                    pass
-
-                try:
-                    if job_context and hasattr(job_context, "room") and job_context.room:
-                        room = job_context.room
-                        if hasattr(room, "connection"):
-                            conn = room.connection
-                            if hasattr(conn, "close"):
-                                await conn.close()
-                        elif hasattr(room, "_connection"):
-                            conn = room._connection
-                            if hasattr(conn, "close"):
-                                await conn.close()
-                except Exception:
-                    pass
-
-                try:
-                    if job_context and hasattr(job_context, "room") and job_context.room:
-                        room = job_context.room
-                        for pid, participant in room.remote_participants.items():
-                            if pid.startswith("sip_"):
-                                if hasattr(participant, "attributes") and participant.attributes:
-                                    call_sid = participant.attributes.get("sip.twilio.callSid")
-                                    if call_sid:
-                                        log.info(f"🔧 Terminating Twilio call SID: {call_sid}")
-                                        await self._terminate_twilio_call(call_sid)
-                except Exception as e:
-                    log.warning(f"⚠️ Twilio termination failed: {e}")
-
+                # Cleanup
                 try:
                     if hasattr(job_context, "disconnect"):
                         await job_context.disconnect()
@@ -287,58 +230,48 @@ class UpClosetsAgent(Agent):
 
                 self.current_session = None
                 log.info("✅ Call termination sequence completed successfully.")
+
         except Exception as e:
             log.error(f"⚠️ Error in _terminate_call_after_delay: {e}")
 
-    async def _terminate_twilio_call(self, call_sid: str):
-        import aiohttp
-
-        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-
-        if not account_sid or not auth_token:
-            log.warning("⚠️ Twilio credentials missing.")
-            return
-
-        try:
-            url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls/{call_sid}.json"
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    auth=aiohttp.BasicAuth(account_sid, auth_token),
-                    data={"Status": "completed"},
-                ) as resp:
-                    if resp.status == 200:
-                        log.info(f"✅ Twilio call {call_sid} terminated.")
-                    else:
-                        body = await resp.text()
-                        log.warning(f"⚠️ Twilio API failed: {resp.status} - {body}")
-        except Exception as e:
-            log.error(f"⚠️ Error terminating Twilio call: {e}")
-
 
 # ------------------------------------------------------------
-# 🚀 ENTRYPOINT
+# 🚀 ENTRYPOINT (UPDATED FOR OPENAI REALTIME)
 # ------------------------------------------------------------
 async def entrypoint(ctx: JobContext):
     global current_job_context
     current_job_context = ctx
 
-    google_api_key = os.getenv("GOOGLE_API_KEY")
-    if not google_api_key:
-        raise RuntimeError("Missing GOOGLE_API_KEY in environment variables!")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise RuntimeError("Missing OPENAI_API_KEY in environment variables!")
+
+    # ✅ OpenAI Realtime Model (instead of Google Gemini)
+    realtime_model = realtime.RealtimeModel(
+        api_key=openai_api_key,
+        model="gpt-4o-mini-realtime-preview-2024-12-17",
+        voice="alloy",
+        modalities=["audio", "text"],
+        temperature=0.2,
+        turn_detection={
+            "type": "server_vad",
+            "threshold": 0.5,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": 500,
+        },
+    )
 
     session = AgentSession(
-        llm=google.beta.realtime.RealtimeModel(
-            voice="Aoede",
-            api_key=google_api_key,
-            temperature=0.2,
-        ),
+        stt=None,
+        tts=None,
+        llm=realtime_model,  # ✅ OpenAI realtime drives everything
     )
 
     agent = UpClosetsAgent(job_context=ctx)
+
     await ctx.connect()
 
+    # Extract phone number
     caller_phone = None
     try:
         await asyncio.sleep(2.0)
@@ -346,32 +279,34 @@ async def entrypoint(ctx: JobContext):
         if room:
             for pid, participant in room.remote_participants.items():
                 if pid.startswith("sip_"):
-                    phone = pid.replace("sip_", "")
-                    if phone.startswith("+"):
-                        caller_phone = phone
+                    number = pid.replace("sip_", "")
+                    if number.startswith("+"):
+                        caller_phone = number
                         break
+
                 if hasattr(participant, "attributes") and participant.attributes:
-                    sip_phone = participant.attributes.get("sip.phoneNumber")
-                    if sip_phone:
-                        caller_phone = sip_phone
+                    num = participant.attributes.get("sip.phoneNumber")
+                    if num:
+                        caller_phone = num
                         break
+
                 if hasattr(participant, "metadata") and participant.metadata:
-                    phone_metadata = participant.metadata.get("phoneNumber") or participant.metadata.get("from")
-                    if phone_metadata:
-                        caller_phone = phone_metadata
+                    meta = participant.metadata.get("phoneNumber") or participant.metadata.get("from")
+                    if meta:
+                        caller_phone = meta
                         break
     except Exception:
         pass
 
-    if caller_phone:
-        agent.caller_phone = caller_phone
-    else:
-        agent.caller_phone = "extracted_failed"
+    agent.caller_phone = caller_phone or "extracted_failed"
 
+    # Start process
     await session.start(
         room=ctx.room,
         agent=agent,
-        room_input_options=RoomInputOptions(noise_cancellation=noise_cancellation.BVC()),
+        room_input_options=RoomInputOptions(
+            noise_cancellation=noise_cancellation.BVC(),
+        ),
     )
 
     asyncio.create_task(agent.on_start(session))
@@ -382,5 +317,8 @@ async def entrypoint(ctx: JobContext):
 # ------------------------------------------------------------
 if __name__ == "__main__":
     agents.cli.run_app(
-        WorkerOptions(entrypoint_fnc=entrypoint, agent_name="upclosets_consultation_agent")
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            agent_name="upclosets_consultation_agent"
+        )
     )
